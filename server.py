@@ -144,7 +144,7 @@ def root():
     
 @app.route('/health')
 def health_check():
-    return jsonify({'status': 'ok'}), 200
+    return jsonify({'status': 'Health Ok'}), 200
     
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080)) # Get port from environment or default to 8080
