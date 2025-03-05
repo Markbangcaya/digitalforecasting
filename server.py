@@ -43,7 +43,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly_express as px
-from flask import Flask, request, jsonify
 from prophet import Prophet
 import itertools
 import statsmodels.api as sm
@@ -138,6 +137,16 @@ def forecastalldisease():
         return jsonify(all_forecasts)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
+        
+@app.route('/')  # Add this route
+def root():
+    return jsonify({'status': 'ok'}), 200
+    
+@app.route('/health')
+def health_check():
+    return jsonify({'status': 'ok'}), 200
+    
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 8080)) # Get port from environment or default to 8080
+    app.run(host='0.0.0.0', port=port, debug=False) #Disable debug for production.
+    # app.run(debug=True)
