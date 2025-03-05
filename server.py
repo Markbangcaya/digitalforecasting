@@ -18,17 +18,17 @@
 # httpd = socketserver.TCPServer(('', port), Handler)
 # httpd.serve_forever()
 
-pip install Flask
-pip install matplotlib
-pip install numpy
-pip install plotly_express
-pip install seaborn
-pip install Prophet
-pip install itertools
-pip install sklearn
-pip install scikit-learn
-pip install openpyxl
-pip install requests
+# pip install Flask
+# pip install matplotlib
+# pip install numpy
+# pip install plotly_express
+# pip install seaborn
+# pip install Prophet
+# pip install itertools
+# pip install sklearn
+# pip install scikit-learn
+# pip install openpyxl
+# pip install requests
 
 # Run this command in the terminal
 # python main.py
