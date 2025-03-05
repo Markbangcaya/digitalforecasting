@@ -19,12 +19,14 @@
 # httpd.serve_forever()
 
 # pip install Flask
-# pip install matplotlib
+# pip install panda
 # pip install numpy
-# pip install plotly_express
+# pip install matplotlib
 # pip install seaborn
+# pip install plotly_express
 # pip install Prophet
 # pip install itertools
+# pip install statsmodels
 # pip install sklearn
 # pip install scikit-learn
 # pip install openpyxl
@@ -123,10 +125,8 @@ def forecast():
         data = request.get_json()['data']
         disease = request.get_json()['disease'].upper()
         forecast_data = forecast_disease(disease, data)
-        print(jsonify(forecast_data))
         return jsonify(forecast_data)
     except Exception as e:
-        print(jsonify(forecast_data,e))
         return jsonify({'error': str(e)}), 500
 
 @app.route('/forecastalldisease', methods=['POST'])
