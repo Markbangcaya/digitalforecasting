@@ -127,7 +127,7 @@ def forecast():
         print(jsonify(forecast_data))
         return jsonify(forecast_data)
     except Exception as e:
-        print(jsonify(forecast_data,e)
+        print(jsonify(forecast_data,e))
         return jsonify({'error': str(e)}), 500
 
 @app.route('/forecastalldisease', methods=['POST'])
