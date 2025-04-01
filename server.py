@@ -105,7 +105,7 @@ def forecast_disease(disease, data):
     pivot_data = daily_country_cases_threshold.pivot(index='Year', columns='Morbidity_Week', values='Total_cases').fillna(0)
 
     # Calculate thresholds
-    alert_threshold, epidemic_threshold = calculate_thresholds(pivot_data)
+    mean_values, std_values, alert_threshold, epidemic_threshold = calculate_thresholds(pivot_data)
 
     # Add thresholds back to the combined data
     combined_data['alert_threshold'] = alert_threshold
