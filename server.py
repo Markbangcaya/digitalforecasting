@@ -1,23 +1,4 @@
-# import os
-# import http.server
-# import socketserver
-
-# from http import HTTPStatus
-
-
-# class Handler(http.server.SimpleHTTPRequestHandler):
-#     def do_GET(self):
-#         self.send_response(HTTPStatus.OK)
-#         self.end_headers()
-#         msg = 'Hello! you requested %s' % (self.path)
-#         self.wfile.write(msg.encode())
-
-
-# port = int(os.getenv('PORT', 80))
-# print('Listening on port %s' % (port))
-# httpd = socketserver.TCPServer(('', port), Handler)
-# httpd.serve_forever()
-
+# This is a Flask application that forecasts disease cases based on historical data.
 # pip install Flask
 # pip install panda
 # pip install numpy
@@ -63,14 +44,25 @@ def adf_test(cases):
     else:
         print("Dataset is non-stationary")
 
+def calculate_thresholds(data):
+    mean_values = data.mean(axis=0)
+    std_values = data.std(axis=0)
+    alert_threshold = mean_values + std_values
+    epidemic_threshold = mean_values + 1.65 * std_values
+    return mean_values, std_values, alert_threshold, epidemic_threshold
+
 def forecast_disease(disease, data):
     mp_cases_confirmed_excel = pd.read_excel(f'{disease}.xlsx')
     mp_cases_confirmed_excel = mp_cases_confirmed_excel.set_index(['Year', 'Morbidity_Week'])
-    
+
+    mp_cases_confirmed_threshold = pd.concat([mp_cases_confirmed_excel], sort=False).fillna(0)
+    daily_country_cases_threshold = mp_cases_confirmed_threshold.groupby(['Morbidity_Week', 'Year']).size().reset_index(name='Total_cases')
+    daily_country_cases_threshold = daily_country_cases_threshold.sort_values(['Year', 'Morbidity_Week'])
+
     df_received = pd.DataFrame(data)
     df_received = df_received.set_index(['Year', 'Morbidity_Week'])
     
-    mp_cases_confirmed = pd.concat([mp_cases_confirmed_excel, df_received], sort=False)
+    mp_cases_confirmed = pd.concat([mp_cases_confirmed_excel, df_received], sort=False).fillna(0)
     
     daily_country_cases = mp_cases_confirmed.groupby(['Morbidity_Week', 'Year']).size().reset_index(name='Total_cases')
     daily_country_cases = daily_country_cases.sort_values(['Year', 'Morbidity_Week'])
@@ -104,19 +96,21 @@ def forecast_disease(disease, data):
     model_arima_fit = model_arima.fit()
     
     forecast_arima = model_arima_fit.forecast(steps=4)
-    forecast_df = pd.DataFrame({'Date': pd.date_range(start=test.index[-1] + pd.Timedelta('1 day'), periods=4, freq='W'),
+    forecast_df = pd.DataFrame({'Date': pd.date_range(start=test.index[-1], periods=4, freq='W'),
                                 'Forecast': forecast_arima})
     
     combined_data = pd.concat([daily_country_cases, forecast_df], ignore_index=True)
-    
-    combined_data['7d_ma'] = combined_data['Total_cases'].rolling(window=7, min_periods=1).mean()
-    combined_data['7d_std'] = combined_data['Total_cases'].rolling(window=7, min_periods=1).std()
-    combined_data['alert_threshold'] = combined_data['7d_ma'] + (2 * combined_data['7d_std'])
-    
-    combined_data['14d_ma'] = combined_data['Total_cases'].rolling(window=14, min_periods=1).mean()
-    combined_data['14d_std'] = combined_data['Total_cases'].rolling(window=14, min_periods=1).std()
-    combined_data['epidemic_threshold'] = combined_data['14d_ma'] + (3 * combined_data['14d_std'])
-    
+
+   # Pivot data to compute thresholds
+    pivot_data = daily_country_cases_threshold.pivot(index='Year', columns='Morbidity_Week', values='Total_cases').fillna(0)
+
+    # Calculate thresholds
+    alert_threshold, epidemic_threshold = calculate_thresholds(pivot_data)
+
+    # Add thresholds back to the combined data
+    combined_data['alert_threshold'] = alert_threshold
+    combined_data['epidemic_threshold'] = epidemic_threshold
+
     return combined_data.to_json(orient='records')
 
 @app.route('/forecast', methods=['POST'])
@@ -137,7 +131,7 @@ def forecastalldisease():
         return jsonify(all_forecasts)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-        
+
 @app.route('/')  # Add this route
 def root():
     return jsonify({'status': 'ok'}), 200
